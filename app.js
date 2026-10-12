@@ -1,5 +1,5 @@
 // ============================================================
-// GESTOR DE VIAJES - Fase 2.5 (Formulario + Capturas + Historial)
+// GESTOR DE VIAJES - Fase 3A (OCR del cartel Verdi)
 // ============================================================
 
 const PALABRA_MAESTRA = 'VERDI2026';
@@ -19,6 +19,10 @@ let tasaFormulario = 0;
 let blobCartel = null;
 let blobPago = null;
 let db = null;
+
+// OCR
+let tesseractCargado = false;
+let ocrEnProgreso = false;
 
 // ============================================================
 // DOM
@@ -83,6 +87,8 @@ const fileCartel      = document.getElementById('file-cartel');
 const fileCartelGal   = document.getElementById('file-cartel-gal');
 const prevCartel      = document.getElementById('prev-cartel');
 const btnQuitarCartel = document.getElementById('btn-quitar-cartel');
+const btnLeerCartel   = document.getElementById('btn-leer-cartel');
+const ocrStatus       = document.getElementById('ocr-status');
 
 const btnCamPago      = document.getElementById('btn-cam-pago');
 const btnGalPago      = document.getElementById('btn-gal-pago');
@@ -480,6 +486,150 @@ function construirMensaje() {
 }
 
 // ============================================================
+// OCR DEL CARTEL
+// ============================================================
+async function cargarTesseract() {
+  if (tesseractCargado) return;
+  if (typeof Tesseract !== 'undefined') { tesseractCargado = true; return; }
+
+  await new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    script.onload = () => { tesseractCargado = true; resolve(); };
+    script.onerror = () => reject(new Error('No se pudo cargar Tesseract'));
+    document.head.appendChild(script);
+  });
+}
+
+function mostrarEstadoOCR(texto, tipo = 'info') {
+  ocrStatus.textContent = texto;
+  ocrStatus.classList.remove('hidden');
+  const colores = {
+    info:    'bg-blue-50 text-blue-800 border-blue-200',
+    success: 'bg-green-50 text-green-800 border-green-200',
+    error:   'bg-yellow-50 text-yellow-800 border-yellow-200'
+  };
+  ocrStatus.className = 'text-xs p-2 rounded border mt-2 ' + (colores[tipo] || colores.info);
+}
+
+function ocultarEstadoOCR() {
+  ocrStatus.classList.add('hidden');
+  ocrStatus.textContent = '';
+}
+
+function resaltarCampo(campo) {
+  campo.classList.add('border-green-500', 'bg-green-50');
+  setTimeout(() => {
+    campo.classList.remove('border-green-500', 'bg-green-50');
+  }, 2500);
+}
+
+function parsearCartel(texto) {
+  const limpio = texto.replace(/[^\S\n]+/g, ' ');
+  console.log('📝 Texto OCR (normalizado):', limpio);
+
+  // ID: patrón #XXXXXXXXX (9 dígitos según ejemplos)
+  let id = null;
+  const idMatch = limpio.match(/#\s*(\d{7,11})/);
+  if (idMatch) {
+    id = idMatch[1];
+  } else {
+    const ids = limpio.match(/\b\d{8,10}\b/g);
+    if (ids && ids.length > 0) id = ids[0];
+  }
+
+  // Monto USD
+  let usd = null;
+
+  // 1) Buscar en la línea que dice "recoja" (más fiable)
+  const lineas = limpio.split('\n');
+  for (const linea of lineas) {
+    if (/recoja|efectivo/i.test(linea)) {
+      const m = linea.match(/\$\s*(\d{1,4}(?:[.,]\d{2}))/);
+      if (m) {
+        usd = parseFloat(m[1].replace(',', '.')).toFixed(2);
+        break;
+      }
+    }
+  }
+
+  // 2) Fallback: cualquier $XX.XX en todo el texto
+  if (!usd) {
+    const todos = limpio.match(/\$\s*(\d{1,4}(?:[.,]\d{2}))/g);
+    if (todos && todos.length > 0) {
+      const valores = todos.map(m =>
+        parseFloat(m.replace(/[$\s]/g, '').replace(',', '.'))
+      ).filter(v => v > 0 && v < 10000);
+      if (valores.length > 0) {
+        usd = valores[valores.length - 1].toFixed(2);
+      }
+    }
+  }
+
+  return { id, usd };
+}
+
+async function leerCartel() {
+  if (!blobCartel) {
+    alert('⚠️ Primero captura el cartel de Verdi');
+    return;
+  }
+  if (ocrEnProgreso) return;
+
+  ocrEnProgreso = true;
+  btnLeerCartel.disabled = true;
+  btnLeerCartel.textContent = '⏳ Leyendo...';
+  mostrarEstadoOCR('🔍 Iniciando lector (primera vez descarga ~15 MB)...', 'info');
+
+  try {
+    await cargarTesseract();
+
+    const resultado = await Tesseract.recognize(blobCartel, 'spa', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round(m.progress * 100);
+          mostrarEstadoOCR(`🔍 Leyendo cartel... ${pct}%`, 'info');
+        } else if (m.status === 'loading language traineddata') {
+          mostrarEstadoOCR('🔍 Cargando idioma español (una vez)...', 'info');
+        }
+      }
+    });
+
+    const texto = resultado.data.text;
+    console.log('📝 Texto crudo OCR:', texto);
+
+    const { id, usd } = parsearCartel(texto);
+
+    const detectado = [];
+    if (id) {
+      formId.value = id;
+      resaltarCampo(formId);
+      detectado.push('ID: ' + id);
+    }
+    if (usd) {
+      formUsd.value = usd;
+      recalcularFormulario();
+      resaltarCampo(formUsd);
+      detectado.push('Monto: $' + usd);
+    }
+
+    if (detectado.length > 0) {
+      mostrarEstadoOCR('✅ Detectado → ' + detectado.join(' · '), 'success');
+    } else {
+      mostrarEstadoOCR('⚠️ No pude detectar datos. Escríbelos manualmente.', 'error');
+    }
+
+  } catch (e) {
+    console.error('Error OCR:', e);
+    mostrarEstadoOCR('⚠️ Error leyendo el cartel. Verifica tu conexión e intenta de nuevo.', 'error');
+  } finally {
+    ocrEnProgreso = false;
+    btnLeerCartel.disabled = false;
+    btnLeerCartel.textContent = '🔍 Leer cartel';
+  }
+}
+
+// ============================================================
 // IMÁGENES
 // ============================================================
 function limpiarImagen(tipo) {
@@ -488,8 +638,10 @@ function limpiarImagen(tipo) {
     prevCartel.src = '';
     prevCartel.classList.add('hidden');
     btnQuitarCartel.classList.add('hidden');
+    btnLeerCartel.classList.add('hidden');
     fileCartel.value = '';
     fileCartelGal.value = '';
+    ocultarEstadoOCR();
   } else {
     blobPago = null;
     prevPago.src = '';
@@ -500,7 +652,7 @@ function limpiarImagen(tipo) {
   }
 }
 
-function manejarArchivo(file, tipo) {
+async function manejarArchivo(file, tipo) {
   if (!file) return;
   if (!file.type.startsWith('image/')) { alert('⚠️ Solo se permiten imágenes'); return; }
   if (file.size > 8 * 1024 * 1024) { alert('⚠️ La imagen es muy grande (máx 8 MB)'); return; }
@@ -514,6 +666,15 @@ function manejarArchivo(file, tipo) {
   img.src = url;
   img.classList.remove('hidden');
   btnQ.classList.remove('hidden');
+
+  // Si es el cartel, mostrar botón "Leer cartel" y auto-ejecutar OCR
+  if (tipo === 'cartel') {
+    btnLeerCartel.classList.remove('hidden');
+    // Auto-ejecutar OCR tras un pequeño delay para que se vea la imagen
+    setTimeout(() => {
+      if (blobCartel && !ocrEnProgreso) leerCartel();
+    }, 500);
+  }
 }
 
 // ============================================================
@@ -805,6 +966,7 @@ btnGalCartel.addEventListener('click', () => fileCartelGal.click());
 fileCartel.addEventListener('change', e => manejarArchivo(e.target.files[0], 'cartel'));
 fileCartelGal.addEventListener('change', e => manejarArchivo(e.target.files[0], 'cartel'));
 btnQuitarCartel.addEventListener('click', () => limpiarImagen('cartel'));
+btnLeerCartel.addEventListener('click', leerCartel);
 
 btnCamPago.addEventListener('click', () => filePago.click());
 btnGalPago.addEventListener('click', () => filePagoGal.click());
