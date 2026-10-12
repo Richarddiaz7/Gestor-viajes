@@ -1,0 +1,10 @@
+{
+  "name": "Gestor de Viajes",
+  "short_name": "Viajes",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f4f6",
+  "theme_color": "#1e40af",
+  "icons": []
+}

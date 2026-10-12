@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Gestor de Viajes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e40af">
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+  <div class="container mx-auto p-4 max-w-md">
+
+    <!-- ============================================ -->
+    <!-- PANTALLA 1: SELECCIÓN / CREACIÓN DE PERFILES -->
+    <!-- ============================================ -->
+    <div id="screen-perfiles">
+
+      <header class="bg-blue-800 text-white p-4 rounded-lg shadow-md mb-4">
+        <h1 class="text-xl font-bold">Gestor de Viajes</h1>
+        <p class="text-xs text-blue-200 mt-1">Selecciona tu perfil para comenzar</p>
+      </header>
+
+      <div id="lista-perfiles" class="space-y-2 mb-4"></div>
+
+      <div class="bg-white p-4 rounded-lg shadow-md space-y-3">
+        <h2 class="font-semibold text-gray-700">➕ Crear nuevo perfil</h2>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del conductor</label>
+          <input type="text" id="input-nombre-perfil" maxlength="40"
+            class="w-full p-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none"
+            placeholder="Ej: Richard Díaz">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono (opcional)</label>
+          <input type="tel" id="input-telefono-perfil" maxlength="20"
+            class="w-full p-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none"
+            placeholder="Ej: +58 412-1234567">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">PIN de 4 dígitos</label>
+          <input type="password" id="input-pin-perfil" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+            class="w-full p-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none tracking-widest text-center text-xl font-mono"
+            placeholder="••••">
+        </div>
+
+        <button id="btn-crear-perfil"
+          class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg shadow hover:bg-blue-700">
+          Crear perfil
+        </button>
+
+        <p id="msg-perfil" class="text-center text-xs"></p>
+      </div>
+
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PANTALLA 2: INGRESO DE PIN                    -->
+    <!-- ============================================ -->
+    <div id="screen-pin" class="hidden">
+
+      <header class="bg-blue-800 text-white p-4 rounded-lg shadow-md mb-4">
+        <h1 class="text-xl font-bold">🔐 Ingresa tu PIN</h1>
+        <p id="pin-nombre-perfil" class="text-xs text-blue-200 mt-1"></p>
+      </header>
+
+      <div class="bg-white p-6 rounded-lg shadow-md space-y-4">
+        <input type="password" id="input-pin-login" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+          class="w-full p-3 border-2 border-blue-300 rounded-lg focus:border-blue-600 outline-none tracking-widest text-center text-3xl font-mono"
+          placeholder="••••">
+
+        <button id="btn-verificar-pin"
+          class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg shadow hover:bg-blue-700">
+          Entrar
+        </button>
+
+        <button id="btn-olvide-pin"
+          class="w-full py-2 bg-gray-100 text-gray-600 rounded-lg text-sm">
+          Olvidé mi PIN
+        </button>
+
+        <button id="btn-volver-perfiles"
+          class="w-full py-2 text-gray-500 text-xs underline">
+          ← Volver a selección de perfil
+        </button>
+
+        <p id="msg-pin" class="text-center text-xs"></p>
+      </div>
+
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PANTALLA 3: RECUPERACIÓN (PALABRA MAESTRA)    -->
+    <!-- ============================================ -->
+    <div id="screen-recuperar" class="hidden">
+
+      <header class="bg-yellow-600 text-white p-4 rounded-lg shadow-md mb-4">
+        <h1 class="text-xl font-bold">🔑 Recuperar PIN</h1>
+        <p class="text-xs text-yellow-100 mt-1">Ingresa la palabra maestra para resetear</p>
+      </header>
+
+      <div class="bg-white p-6 rounded-lg shadow-md space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Palabra maestra</label>
+          <input type="password" id="input-palabra-maestra"
+            class="w-full p-3 border-2 border-yellow-300 rounded-lg focus:border-yellow-600 outline-none"
+            placeholder="Palabra secreta">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nuevo PIN (4 dígitos)</label>
+          <input type="password" id="input-nuevo-pin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+            class="w-full p-3 border-2 border-yellow-300 rounded-lg focus:border-yellow-600 outline-none tracking-widest text-center text-xl font-mono"
+            placeholder="••••">
+        </div>
+
+        <button id="btn-resetear-pin"
+          class="w-full py-3 bg-yellow-600 text-white font-bold rounded-lg shadow hover:bg-yellow-700">
+          Resetear PIN
+        </button>
+
+        <button id="btn-cancelar-recuperar"
+          class="w-full py-2 text-gray-500 text-xs underline">
+          ← Cancelar
+        </button>
+
+        <p id="msg-recuperar" class="text-center text-xs"></p>
+      </div>
+
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PANTALLA 4: MENÚ PRINCIPAL                    -->
+    <!-- ============================================ -->
+    <div id="screen-menu" class="hidden">
+
+      <header class="bg-blue-800 text-white p-4 rounded-lg shadow-md mb-4">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs text-blue-200">Conductor</p>
+            <h1 id="nombre-perfil-activo" class="text-lg font-bold">—</h1>
+          </div>
+          <button id="btn-cambiar-perfil"
+            class="text-xs bg-blue-600 px-3 py-1 rounded hover:bg-blue-700">
+            Bloquear
+          </button>
+        </div>
+      </header>
+
+      <p class="text-center text-sm text-gray-600 mb-4">¿Cómo fue este viaje?</p>
+
+      <div class="space-y-3">
+
+        <button data-modo="app"
+          class="btn-modo w-full p-4 bg-white rounded-lg shadow-md border-l-4 border-blue-600 text-left hover:shadow-lg transition">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📱</span>
+            <div>
+              <p class="font-bold text-gray-800">Viaje x App</p>
+              <p class="text-xs text-gray-500">El cliente pidió por Verdi</p>
+            </div>
+          </div>
+        </button>
+
+        <button data-modo="manual"
+          class="btn-modo w-full p-4 bg-white rounded-lg shadow-md border-l-4 border-green-600 text-left hover:shadow-lg transition">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🚕</span>
+            <div>
+              <p class="font-bold text-gray-800">Paseo Manual</p>
+              <p class="text-xs text-gray-500">Capté al cliente en la calle</p>
+            </div>
+          </div>
+        </button>
+
+        <button data-modo="asignado"
+          class="btn-modo w-full p-4 bg-white rounded-lg shadow-md border-l-4 border-yellow-500 text-left hover:shadow-lg transition">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">📋</span>
+            <div>
+              <p class="font-bold text-gray-800">Asignado por Empresa</p>
+              <p class="text-xs text-gray-500">Vino con plantilla por WhatsApp</p>
+            </div>
+          </div>
+        </button>
+
+      </div>
+
+      <button id="btn-ver-historial"
+        class="w-full mt-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg text-sm">
+        📊 Ver historial (próximamente)
+      </button>
+
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PANTALLA 5: FORMULARIO DE REPORTE             -->
+    <!-- ============================================ -->
+    <div id="screen-form" class="hidden">
+
+      <header class="bg-blue-800 text-white p-4 rounded-lg shadow-md mb-4">
+        <div class="flex justify-between items-center">
+          <button id="btn-volver-menu" class="text-xs bg-blue-600 px-3 py-1 rounded hover:bg-blue-700">
+            ← Volver
+          </button>
+          <h1 id="form-titulo" class="text-base font-bold">—</h1>
+          <span class="w-16"></span>
+        </div>
+        <div class="flex justify-between items-center mt-2 text-xs text-blue-200">
+          <span>Tasa BCV: <input type="number" id="form-tasa" step="0.01" min="0"
+            class="font-mono font-bold bg-blue-700 text-white w-20 px-1 rounded text-xs text-center"
+            value="0.00"></span>
+          <button id="btn-refresh-tasa" class="bg-blue-600 px-2 py-0.5 rounded text-xs">↻</button>
+        </div>
+      </header>
+
+      <div class="bg-white p-4 rounded-lg shadow-md space-y-4">
+
+        <!-- Origen -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Origen</label>
+          <input type="text" id="form-origen" maxlength="60"
+            class="w-full p-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none"
+            placeholder="Ej: cc. Millenium">
+        </div>
+
+        <!-- Destino -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Destino</label>
+          <input type="text" id="form-destino" maxlength="60"
+            class="w-full p-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none"
+            placeholder="Ej: Bello Monte">
+        </div>
+
+        <!-- ID del viaje -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            ID del viaje <span class="text-xs text-gray-400">(del cartel de Verdi)</span>
+          </label>
+          <input type="text" id="form-id" maxlength="30"
+            class="w-full p-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none"
+            placeholder="Ej: 735536288">
+        </div>
+
+        <!-- Monto USD -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">💵 Monto en USD (del cartel)</label>
+          <input type="number" id="form-usd" inputmode="decimal" step="0.01" min="0"
+            class="w-full text-xl font-bold p-3 border-2 border-blue-300 rounded-lg focus:border-blue-600 outline-none"
+            placeholder="0.00">
+        </div>
+
+        <!-- Monto VES (auto) -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">🇻🇪 Equivalente en VES (auto)</label>
+          <input type="text" id="form-ves" readonly
+            class="w-full text-xl font-bold p-3 border-2 border-green-300 rounded-lg bg-gray-50"
+            placeholder="0.00">
+        </div>
+
+        <!-- Desglose 70/30 (interno) -->
+        <div id="form-desglose" class="bg-gray-50 p-3 rounded-lg text-xs space-y-1 border border-gray-200">
+          <p class="font-semibold text-gray-600 mb-1">📊 Desglose (interno)</p>
+          <div class="flex justify-between">
+            <span>Empresa (70%):</span>
+            <span class="font-mono"><span id="form-empresa-usd">$0.00</span> | <span id="form-empresa-ves">Bs 0.00</span></span>
+          </div>
+          <div class="flex justify-between text-green-700 font-semibold">
+            <span>Tu parte (30%):</span>
+            <span class="font-mono"><span id="form-mio-usd">$0.00</span> | <span id="form-mio-ves">Bs 0.00</span></span>
+          </div>
+        </div>
+
+        <!-- Método de pago -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Método de pago</label>
+          <select id="form-pago"
+            class="w-full p-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 outline-none bg-white">
+            <option value="PAGO MOVIL">Pago Móvil</option>
+            <option value="PUNTO DE VENTA">Punto de Venta</option>
+            <option value="EFECTIVO USD">Efectivo USD</option>
+            <option value="EFECTIVO VES">Efectivo VES</option>
+            <option value="PREPAGADO">Prepagado / Alianza</option>
+            <option value="ZELLE">Zelle</option>
+            <option value="BINANCE USDT">Binance USDT</option>
+          </select>
+        </div>
+
+        <!-- Plantilla original (solo modo asignado) -->
+        <div id="form-plantilla-container" class="hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            📋 Plantilla original (pegar del grupo)
+          </label>
+          <textarea id="form-plantilla" rows="6"
+            class="w-full p-2 border-2 border-yellow-300 rounded-lg focus:border-yellow-600 outline-none text-sm font-mono"
+            placeholder="Pega aquí la plantilla que envió la empresa..."></textarea>
+        </div>
+
+        <!-- Adjuntos: captura de imágenes -->
+        <div class="bg-gray-50 border border-gray-200 p-3 rounded-lg space-y-3">
+          <p class="text-sm font-semibold text-gray-700">📸 Capturas</p>
+
+          <!-- Botón 1: Cartel Verdi -->
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">1️⃣ Cartel final de Verdi</label>
+            <div class="flex gap-2">
+              <button type="button" id="btn-cam-cartel"
+                class="flex-1 py-2 bg-blue-100 text-blue-800 rounded-lg text-sm font-medium">
+                📷 Cámara
+              </button>
+              <button type="button" id="btn-gal-cartel"
+                class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">
+                🖼️ Galería
+              </button>
+            </div>
+            <input type="file" id="file-cartel" accept="image/*" capture="environment" class="hidden">
+            <input type="file" id="file-cartel-gal" accept="image/*" class="hidden">
+            <img id="prev-cartel" class="hidden mt-2 w-full max-h-40 object-contain rounded border" alt="">
+            <button type="button" id="btn-quitar-cartel"
+              class="hidden mt-1 text-xs text-red-600 underline">Quitar imagen</button>
+          </div>
+
+          <!-- Botón 2: Pago Móvil -->
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">2️⃣ Comprobante de pago</label>
+            <div class="flex gap-2">
+              <button type="button" id="btn-cam-pago"
+                class="flex-1 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium">
+                📷 Cámara
+              </button>
+              <button type="button" id="btn-gal-pago"
+                class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">
+                🖼️ Galería
+              </button>
+            </div>
+            <input type="file" id="file-pago" accept="image/*" capture="environment" class="hidden">
+            <input type="file" id="file-pago-gal" accept="image/*" class="hidden">
+            <img id="prev-pago" class="hidden mt-2 w-full max-h-40 object-contain rounded border" alt="">
+            <button type="button" id="btn-quitar-pago"
+              class="hidden mt-1 text-xs text-red-600 underline">Quitar imagen</button>
+          </div>
+        </div>
+
+        <!-- Botón Enviar a WhatsApp -->
+        <button id="btn-enviar-wa"
+          class="w-full py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 text-lg">
+          🟢 Enviar a WhatsApp
+        </button>
+
+        <!-- Botón vista previa -->
+        <button id="btn-vista-previa"
+          class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg shadow hover:bg-blue-700">
+          👁️ Ver vista previa del mensaje
+        </button>
+
+      </div>
+
+      <!-- Vista previa del mensaje -->
+      <div id="preview-container" class="hidden mt-4 bg-white p-4 rounded-lg shadow-md">
+        <h2 class="font-semibold text-gray-700 mb-2 text-sm">📄 Mensaje que se enviará:</h2>
+        <pre id="preview-texto" class="whitespace-pre-wrap text-xs bg-gray-50 p-3 rounded border border-gray-200 font-mono text-gray-800"></pre>
+        <button id="btn-copiar-mensaje"
+          class="w-full mt-3 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg text-sm">
+          📋 Copiar mensaje
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
